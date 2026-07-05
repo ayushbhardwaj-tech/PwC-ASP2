@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ResOps — Resource Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#070b14;--s1:#0d1220;--s2:#111827;--s3:#1a2235;--brd:rgba(255,255,255,.07);--brd2:rgba(255,255,255,.04);--blue:#3b82f6;--indigo:#6366f1;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--rose:#f43f5e;--cyan:#06b6d4;--purple:#8b5cf6;--text:#f1f5f9;--t2:#94a3b8;--t3:#475569;--mono:'DM Mono',monospace;--ui:'Inter',system-ui,sans-serif;--r:12px;--r2:8px;--sw:240px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:13px;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.sidebar{width:var(--sw);position:fixed;top:0;left:0;height:100vh;background:var(--s1);border-right:1px solid var(--brd);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
+.logo-a{padding:20px 20px 16px;border-bottom:1px solid var(--brd)}
+.logo-m{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.logo-i{width:32px;height:32px;background:linear-gradient(135deg,#3b82f6,#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,.3)}
+.logo-i svg{width:16px;height:16px;color:#fff}
+.logo-t{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.logo-s{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-left:42px}
+.nav{flex:1;overflow-y:auto;padding:8px 0}
+.nl{padding:13px 20px 4px;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;color:var(--t2);font-size:12.5px;font-weight:500;border-left:2px solid transparent;transition:all .15s}
+.ni:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.ni.active{color:#fff;border-left-color:var(--blue);background:rgba(59,130,246,.1);font-weight:600}
+.ni svg{width:14px;height:14px;flex-shrink:0;opacity:.6}
+.ni.active svg{opacity:1;color:var(--blue)}
+.nbadge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.sfoot{padding:14px 20px;border-top:1px solid var(--brd)}
+.sbtn{width:100%;padding:9px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:var(--r2);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .2s;box-shadow:0 4px 14px rgba(59,130,246,.3)}
+.sbtn:hover{opacity:.85}
+.sbtn.loading svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stime{font-size:10px;color:var(--t3);text-align:center;margin-top:7px}
+.main{margin-left:var(--sw);min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:54px;background:rgba(7,11,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100}
+.pgt{font-size:14px;font-weight:700;letter-spacing:-.02em}
+.pgs{font-size:11px;color:var(--t3);margin-top:1px}
+.chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--s3);border:1px solid var(--brd);color:var(--t2)}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hmb{display:none;background:none;border:none;color:var(--t2);cursor:pointer;padding:5px}
+.content{padding:24px 28px;flex:1}
+.page{display:none}.page.active{display:block}
+.story{background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:20px 24px;margin-bottom:22px;position:relative;overflow:hidden}
+.story::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#3b82f6,#6366f1,#8b5cf6)}
+.stag{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
+.sh{font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1.2;margin-bottom:8px}
+.sd{font-size:12px;color:var(--t2);line-height:1.6}
+.spills{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.sp{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.spr{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.spg{background:rgba(16,185,129,.1);color:#6ee7b7;border:1px solid rgba(16,185,129,.2)}
+.spa{background:rgba(245,158,11,.1);color:#fcd34d;border:1px solid rgba(245,158,11,.2)}
+.spb{background:rgba(59,130,246,.1);color:#93c5fd;border:1px solid rgba(59,130,246,.2)}
+.spp{background:rgba(139,92,246,.1);color:#c4b5fd;border:1px solid rgba(139,92,246,.2)}
+.krow{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:20px}
+.kc{background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s,border-color .2s}
+.kc:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14)}
+.kc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.kb::after{background:linear-gradient(90deg,#3b82f6,#6366f1)}.kg::after{background:linear-gradient(90deg,#10b981,#06b6d4)}.kr::after{background:linear-gradient(90deg,#ef4444,#f43f5e)}.ka::after{background:linear-gradient(90deg,#f59e0b,#fb923c)}.kp::after{background:linear-gradient(90deg,#8b5cf6,#6366f1)}
+.kl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start}
+.ki{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.ki svg{width:13px;height:13px}
+.kib{background:rgba(59,130,246,.15);color:var(--blue)}.kig{background:rgba(16,185,129,.15);color:var(--green)}.kir{background:rgba(239,68,68,.15);color:var(--red)}.kia{background:rgba(245,158,11,.15);color:var(--amber)}.kip{background:rgba(139,92,246,.15);color:var(--purple)}
+.kv{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1;font-family:var(--mono)}
+.ks{font-size:11px;color:var(--t3);margin-top:6px}
+.card{background:var(--s2);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.card.nm{margin-bottom:0}
+.ch{padding:14px 18px;border-bottom:1px solid var(--brd2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ct{font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+.cd{width:8px;height:8px;border-radius:50%}
+.cb{padding:18px}
+.cw{position:relative}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.ins{background:var(--s3);border-radius:var(--r2);padding:11px 14px;border-left:3px solid var(--blue)}
+.ins.iw{border-left-color:var(--amber)}.ins.id{border-left-color:var(--red)}.ins.ig{border-left-color:var(--green)}
+.il{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+.it{font-size:11px;color:var(--t2);line-height:1.6}
+.it strong{color:var(--text);font-weight:600}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--s3)}
+th{padding:9px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--brd);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--brd2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,.025)}
+.p{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.pg{background:rgba(16,185,129,.12);color:#6ee7b7}.pr{background:rgba(239,68,68,.12);color:#fca5a5}.pa{background:rgba(245,158,11,.12);color:#fcd34d}.pb{background:rgba(59,130,246,.12);color:#93c5fd}.pp{background:rgba(139,92,246,.12);color:#c4b5fd}.pc{background:rgba(6,182,212,.12);color:#67e8f9}.pgr{background:rgba(71,85,105,.2);color:var(--t3)}
+.pbar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin-top:4px}
+.pf{height:100%;border-radius:2px;transition:width .4s}
+.flow{display:flex;align-items:flex-start;overflow-x:auto;padding:6px 0}
+.fst{flex:1;min-width:60px;text-align:center;position:relative}
+.fst::before{content:'';position:absolute;top:13px;left:50%;right:-50%;height:2px;background:var(--brd);z-index:0}
+.fst:last-child::before{display:none}
+.fd::before{background:rgba(16,185,129,.3)}
+.fdot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 5px;font-size:10px;font-weight:700;position:relative;z-index:1;border:2px solid}
+.fd .fdot{background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green)}
+.fp .fdot{background:rgba(59,130,246,.15);border-color:var(--blue);color:var(--blue)}
+.fn .fdot{background:var(--s3);border-color:var(--brd);color:var(--t3)}
+.flb{font-size:9px;color:var(--t3);font-weight:500;padding:0 3px;line-height:1.3}
+.fd .flb{color:var(--t2)}
+.al{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--r2);background:var(--s3);border:1px solid var(--brd2);margin-bottom:8px}
+.adot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ai{flex:1}.an{font-size:12px;font-weight:600;margin-bottom:2px}.ad{font-size:11px;color:var(--t3)}
+.tgl{width:38px;height:21px;border-radius:11px;background:var(--s3);border:1px solid var(--brd);position:relative;cursor:pointer;transition:all .2s;flex-shrink:0}
+.tgl.on{background:var(--blue);border-color:var(--blue);box-shadow:0 0 8px rgba(59,130,246,.3)}
+.tgl::after{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tgl.on::after{left:20px}
+.fg{margin-bottom:14px}
+label{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+input,select,textarea{width:100%;background:var(--s3);border:1px solid var(--brd);border-radius:var(--r2);padding:8px 12px;color:var(--text);font-family:var(--ui);font-size:12px;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+input::placeholder{color:var(--t3)}
+.btn{padding:8px 16px;border-radius:var(--r2);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn:hover{opacity:.85}
+.btnp{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.25)}
+.btng{background:transparent;border:1px solid var(--brd);color:var(--t2)}
+.btng:hover{border-color:rgba(255,255,255,.2);color:var(--text);background:var(--s3)}
+.btnd{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.srow{background:var(--s3);border:1px solid var(--brd2);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px}
+.srt{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.srl{font-size:12px;font-weight:600;flex:1}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sdot.ok{background:var(--green);box-shadow:0 0 5px var(--green)}.sdot.err{background:var(--red)}.sdot.pend{background:var(--t3)}
+.sinp{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+.drw-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;backdrop-filter:blur(3px)}
+.drw-ov.open{display:block}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:500px;max-width:95vw;background:var(--s1);border-left:1px solid var(--brd);z-index:301;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.dh{padding:18px 22px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--s1);z-index:10}
+.dav{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.dnm{font-size:14px;font-weight:700}.drl{font-size:11px;color:var(--t3)}
+.dcl{margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;padding:5px;border-radius:6px}
+.dcl:hover{color:var(--text);background:var(--s3)}
+.dbd{flex:1;overflow-y:auto;padding:20px 22px}
+.dsec{margin-bottom:20px}
+.dst{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--brd2)}
+.dgr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.df{background:var(--s3);border-radius:var(--r2);padding:10px 12px}
+.df label{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);display:block;margin-bottom:4px}
+.df input,.df select{background:transparent;border:none;border-bottom:1px solid var(--brd);border-radius:0;padding:3px 0;font-size:12px;width:100%}
+.df input:focus,.df select:focus{outline:none;border-bottom-color:var(--blue);box-shadow:none}
+.dft{padding:14px 22px;border-top:1px solid var(--brd);display:flex;gap:8px;position:sticky;bottom:0;background:var(--s1)}
+.ctog{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r2);background:var(--s3);margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:border-color .15s}
+.ctog:hover{border-color:var(--brd)}
+.hstep{display:flex;gap:16px;padding:14px;background:var(--s3);border-radius:var(--r2);margin-bottom:10px;border:1px solid var(--brd2)}
+.hnum{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(59,130,246,.3);margin-top:2px}
+.hh{font-size:12px;font-weight:700;margin-bottom:4px}.hp{font-size:11px;color:var(--t3);line-height:1.6}
+.cb2{background:var(--bg);border:1px solid var(--brd);border-radius:var(--r2);padding:12px 14px;font-family:var(--mono);font-size:11px;color:#7dd3fc;line-height:1.7;overflow-x:auto;margin:8px 0}
+.cm2{color:var(--t3)}.ck{color:#c4b5fd}.cv{color:#86efac}.cs{color:#fcd34d}
+.lrow{text-align:center;padding:50px;color:var(--t3);font-size:12px}
+.spin2{display:inline-block;width:16px;height:16px;border:2px solid var(--brd);border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite;margin-right:6px;vertical-align:middle}
+.empty{text-align:center;padding:40px;color:var(--t3);font-size:12px}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+@media(max-width:640px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.hmb{display:block}.krow{grid-template-columns:1fr 1fr}.content{padding:14px 16px}.dgr{grid-template-columns:1fr}.sinp{grid-template-columns:1fr}.sh{font-size:16px}}
+.mob-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190}
+.mob-ov.show{display:block}
+</style>
+</head>
+<body>
+<div class="mob-ov" id="mobOv" onclick="closeSB()"></div>
+<div class="drw-ov" id="drwOv" onclick="closeDrw()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="logo-a"><div class="logo-m"><div class="logo-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><span class="logo-t">ResOps</span></div><div class="logo-s">Resource Intelligence</div></div>
+  <nav class="nav">
+    <div class="nl">Analytics</div>
+    <div class="ni active" onclick="go('overview',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview</div>
+    <div class="ni" onclick="go('billing',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Billing &amp; Non-Billable<span class="nbadge" id="nbB">0</span></div>
+    <div class="ni" onclick="go('competency',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Competency</div>
+    <div class="nl">Workforce</div>
+    <div class="ni" onclick="go('employees',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Employee Sheet</div>
+    <div class="ni" onclick="go('onboarding',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Onboarding</div>
+    <div class="ni" onclick="go('rotation',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Track &amp; Rotation</div>
+    <div class="ni" onclick="go('training',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>GenAI Training</div>
+    <div class="nl">System</div>
+    <div class="ni" onclick="go('alerts',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alerts</div>
+    <div class="ni" onclick="go('config',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 7.07M4.93 19.07A10 10 0 0 1 3 12a10 10 0 0 1 1.93-7.07"/></svg>Data Sources</div>
+    <div class="ni" onclick="go('howto',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>How to Connect Sheets</div>
+  </nav>
+  <div class="sfoot">
+    <button class="sbtn" id="syncBtn" onclick="syncAll()"><svg id="syncIco" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh All Data</button>
+    <div class="stime" id="sTime">Last sync: never</div>
+  </div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="hmb" onclick="openSB()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div><div class="pgt" id="pgT">Overview</div><div class="pgs" id="pgS">Resource Intelligence Dashboard</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="chip"><span class="ldot"></span>Live</div>
+      <div class="chip" id="tSync" style="font-family:var(--mono);font-size:10px">—</div>
+    </div>
+  </div>
+  <div class="content">
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="story"><div class="stag">📊 Resource Snapshot</div><div class="sh" id="sH">Loading workforce intelligence…</div><div class="sd" id="sD">Analysing billing efficiency, competency spread, and workforce health.</div><div class="spills" id="sP"></div></div>
+    <div class="krow">
+      <div class="kc kb"><div class="kl">Total Resources<div class="ki kib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div><div class="kv" id="k1">—</div><div class="ks">Active headcount</div></div>
+      <div class="kc kg"><div class="kl">Billable Rate<div class="ki kig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div></div><div class="kv" id="k2">—</div><div class="ks" id="k2s">of headcount</div></div>
+      <div class="kc kr"><div class="kl">Non-Billable<div class="ki kir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div class="kv" id="k3">—</div><div class="ks">Requiring action</div></div>
+      <div class="kc ka"><div class="kl">Rotation Due<div class="ki kia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg></div></div><div class="kv" id="k4">—</div><div class="ks">≥12 months in track</div></div>
+      <div class="kc kp"><div class="kl">Avg Allocation<div class="ki kip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div></div><div class="kv" id="k5">—</div><div class="ks">Across all resources</div></div>
+    </div>
+    <div class="g2">
+      <div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--green)"></span>Billing Distribution</div><span style="font-size:11px;color:var(--t3)">headcount</span></div><div class="cb"><div class="cw" style="height:200px"><canvas id="cB"></canvas></div><div class="ins iw" style="margin-top:12px" id="bIns"></div></div></div>
+      <div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--indigo)"></span>Competency Mix</div><span style="font-size:11px;color:var(--t3)">headcount</span></div><div class="cb"><div class="cw" style="height:200px"><canvas id="cC"></canvas></div><div class="ins" style="margin-top:12px" id="cIns"></div></div></div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--cyan)"></span>Allocation Distribution</div><span style="font-size:11px;color:var(--t3)">resources by % bucket</span></div><div class="cb"><div class="cw" style="height:150px"><canvas id="cA"></canvas></div><div class="ins ig" style="margin-top:12px" id="aIns"></div></div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--green)"></span>All Resources</div><input id="srch" type="text" placeholder="Search name, competency…" style="width:210px" oninput="rRes()"/></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Employee</th><th>Code</th><th>Competency</th><th>Billing</th><th>Allocation</th><th>Track Risk</th><th>End Date</th></tr></thead><tbody id="resTb"><tr><td colspan="7" class="lrow"><span class="spin2"></span>Loading…</td></tr></tbody></table></div></div></div>
+  </div>
+  <!-- BILLING -->
+  <div class="page" id="page-billing">
+    <div class="story"><div class="stag">💸 Billing Analysis</div><div class="sh" id="bSH">Non-billable resources need attention</div><div class="sd" id="bSD">Track how long resources remain non-billable and identify patterns by competency.</div><div class="spills" id="bSP"></div></div>
+    <div class="krow"><div class="kc kr"><div class="kl">Non-Billable</div><div class="kv" id="bk1">—</div><div class="ks">Total</div></div><div class="kc ka"><div class="kl">&gt;30 Days</div><div class="kv" id="bk2">—</div><div class="ks">Amber zone</div></div><div class="kc kr"><div class="kl">&gt;60 Days</div><div class="kv" id="bk3">—</div><div class="ks">Critical</div></div><div class="kc kb"><div class="kl">Avg Duration</div><div class="kv" id="bk4">—</div><div class="ks">days non-billable</div></div></div>
+    <div class="g2"><div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--red)"></span>Non-Billable by Competency</div></div><div class="cb"><div class="cw" style="height:200px"><canvas id="cNBC"></canvas></div></div></div><div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--amber)"></span>Duration Buckets</div></div><div class="cb"><div class="cw" style="height:200px"><canvas id="cNBD"></canvas></div></div></div></div>
+    <div style="height:16px"></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--red)"></span>Non-Billable Resources</div><div style="display:flex;gap:6px"><button class="btn btng" style="font-size:10px;padding:4px 10px" onclick="setBF('all',this)">All</button><button class="btn btng" style="font-size:10px;padding:4px 10px" onclick="setBF(30,this)">30d+</button><button class="btn btng" style="font-size:10px;padding:4px 10px" onclick="setBF(60,this)">60d+</button></div></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Employee</th><th>Competency</th><th>Start Date</th><th>Days NB</th><th>Severity</th><th>Action</th></tr></thead><tbody id="billTb"></tbody></table></div></div></div>
+  </div>
+  <!-- COMPETENCY -->
+  <div class="page" id="page-competency">
+    <div class="story"><div class="stag">🧠 Competency Intelligence</div><div class="sh" id="cSH">Workforce capability at a glance</div><div class="sd" id="cSD">Understand how talent is distributed across competencies.</div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--indigo)"></span>Headcount by Competency</div></div><div class="cb"><div class="cw" style="height:250px"><canvas id="cCB"></canvas></div></div></div>
+    <div class="g2"><div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--green)"></span>Billable vs Non-Billable</div></div><div class="cb"><div class="cw" style="height:210px"><canvas id="cCBill"></canvas></div></div></div><div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--cyan)"></span>Avg Allocation %</div></div><div class="cb"><div class="cw" style="height:210px"><canvas id="cCAlloc"></canvas></div></div></div></div>
+    <div style="height:16px"></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--blue)"></span>Competency Breakdown</div></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Competency</th><th>Headcount</th><th>Billable</th><th>Non-Billable</th><th>Avg Allocation</th><th>Rotation Risk</th><th>Billable Rate</th></tr></thead><tbody id="compTb"></tbody></table></div></div></div>
+  </div>
+  <!-- EMPLOYEES -->
+  <div class="page" id="page-employees">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="eS" type="text" placeholder="Search…" style="width:200px" oninput="rEmp()"/><select id="eFC" onchange="rEmp()" style="width:140px"><option value="">All Competencies</option></select><select id="eFB" onchange="rEmp()" style="width:130px"><option value="">All Billing</option><option>Billable</option><option>Non-Billable</option></select><select id="eFE" onchange="rEmp()" style="width:120px"><option value="">All Engagements</option><option>T&amp;M</option><option>Fixed</option></select></div>
+      <div style="display:flex;gap:8px"><button class="btn btng" onclick="exportCSV()">⬇ Export</button><button class="btn btnp" onclick="openAddEmp()">+ Add</button><button class="btn btng" onclick="go('empconfig',null)">⚙ Columns</button></div>
+    </div>
+    <div class="krow" style="margin-bottom:16px"><div class="kc kb"><div class="kl">Showing</div><div class="kv" id="ek1">—</div><div class="ks">of <span id="ek1t">—</span></div></div><div class="kc kg"><div class="kl">Billable</div><div class="kv" id="ek2">—</div></div><div class="kc kr"><div class="kl">Non-Billable</div><div class="kv" id="ek3">—</div></div><div class="kc kp"><div class="kl">Avg Allocation</div><div class="kv" id="ek4">—</div></div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--blue)"></span>Employee Master Sheet</div><span id="empSrc" style="font-size:11px;color:var(--t3)">Demo Data</span></div><div class="cb" style="padding:0"><div class="tw"><table id="empTbl"><thead id="eTh"></thead><tbody id="eTb"></tbody></table></div></div></div>
+  </div>
+  <!-- EMP CONFIG -->
+  <div class="page" id="page-empconfig">
+    <div class="g2"><div class="card nm"><div class="ch"><div class="ct">Column Mapping</div><button class="btn btnp" style="font-size:11px" onclick="saveColMap()">Save</button></div><div class="cb"><div id="colMapL"></div></div></div><div class="card nm"><div class="ch"><div class="ct">Visibility &amp; Order</div><button class="btn btng" style="font-size:11px" onclick="resetCols()">Reset</button></div><div class="cb"><div id="colVisL"></div></div></div></div>
+    <div style="height:16px"></div>
+    <div class="card"><div class="ch"><div class="ct">Add Custom Column</div></div><div class="cb"><div class="g3"><div class="fg"><label>Label</label><input id="ccL" placeholder="Visa Status"/></div><div class="fg"><label>Sheet Header</label><input id="ccH" placeholder="visa_status" style="font-family:var(--mono)"/></div><div class="fg"><label>Type</label><select id="ccT"><option>Text</option><option>Badge</option><option>Date</option><option>Number</option><option>Progress</option><option>Email</option></select></div><div class="fg"><label>Badge Colors</label><input id="ccB" placeholder="Active:green,Inactive:red"/></div><div class="fg"><label>Width (px)</label><input type="number" id="ccW" value="120"/></div><div class="fg"><label>Visible</label><select id="ccV"><option>Yes</option><option>No</option></select></div></div><button class="btn btnp" onclick="addCC()">Add Column</button></div></div>
+    <div style="height:16px"></div>
+    <div class="card"><div class="ch"><div class="ct">Preview</div><button class="btn btnp" style="font-size:11px" onclick="go('employees',null)">← Back</button></div><div class="cb" style="padding:0"><div class="tw"><table><thead id="pvH"></thead><tbody id="pvB"></tbody></table></div></div></div>
+  </div>
+  <!-- ONBOARDING -->
+  <div class="page" id="page-onboarding">
+    <div class="story"><div class="stag">🚀 Onboarding Pipeline</div><div class="sh">Track every new hire from day one</div><div class="sd">9-step onboarding flow per employee. Auto-assigned on joining. Progress tracked in real-time.</div></div>
+    <div class="g2"><div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--green)"></span>Onboarding Status</div></div><div class="cb"><div class="cw" style="height:195px"><canvas id="cOnb"></canvas></div></div></div><div class="card nm"><div class="ch"><div class="ct"><span class="cd" style="background:var(--blue)"></span>Standard 9-Step Flow</div></div><div class="cb" style="padding:12px 14px"><div class="flow" id="flowRow"></div></div></div></div>
+    <div style="height:16px"></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--blue)"></span>Resource Onboarding</div></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Employee</th><th>Competency</th><th>Start Date</th><th>Progress</th><th>Steps</th><th>Status</th><th>Days In</th></tr></thead><tbody id="onbTb"></tbody></table></div></div></div>
+  </div>
+  <!-- ROTATION -->
+  <div class="page" id="page-rotation">
+    <div class="story"><div class="stag">🔄 Track &amp; Rotation</div><div class="sh" id="rSH">Stagnation risks your talent pipeline</div><div class="sd">Resources in the same track 12+ months are flagged. 18+ months is critical.</div></div>
+    <div class="krow"><div class="kc ka"><div class="kl">Rotation Due</div><div class="kv" id="rk1">—</div><div class="ks">≥12 months</div></div><div class="kc kr"><div class="kl">Critical</div><div class="kv" id="rk2">—</div><div class="ks">≥18 months</div></div><div class="kc kg"><div class="kl">Healthy</div><div class="kv" id="rk3">—</div><div class="ks">&lt;12 months</div></div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--amber)"></span>Track Duration Distribution</div></div><div class="cb"><div class="cw" style="height:190px"><canvas id="cRot"></canvas></div></div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--amber)"></span>Rotation Required</div></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Employee</th><th>Competency</th><th>In Track Since</th><th>Months</th><th>Risk</th><th>Action</th></tr></thead><tbody id="rotTb"></tbody></table></div></div></div>
+  </div>
+  <!-- TRAINING -->
+  <div class="page" id="page-training">
+    <div class="story"><div class="stag">🤖 GenAI Training</div><div class="sh">AI readiness across the team</div><div class="sd">5-module GenAI certification. Auto-assigned post-onboarding. Track completion per module and resource.</div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--purple)"></span>Module Completion Progress</div></div><div class="cb"><div class="cw" style="height:230px"><canvas id="cTr"></canvas></div></div></div>
+    <div class="card"><div class="ch"><div class="ct"><span class="cd" style="background:var(--purple)"></span>Resource Training Status</div></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Employee</th><th>Competency</th><th>Fundamentals</th><th>Responsible AI</th><th>Prompt Eng.</th><th>AI in Work</th><th>Advanced</th><th>Overall</th></tr></thead><tbody id="trainTb"></tbody></table></div></div></div>
+  </div>
+  <!-- ALERTS -->
+  <div class="page" id="page-alerts">
+    <div class="story"><div class="stag">🔔 Alert Engine</div><div class="sh">Proactive notifications, fully configurable</div><div class="sd">Toggle rules on/off. Add custom conditions. Set recipient emails — no code required.</div></div>
+    <div id="alertL"></div>
+    <div class="card" style="margin-top:16px"><div class="ch"><div class="ct">Add Custom Alert Rule</div></div><div class="cb"><div class="g2"><div class="fg"><label>Alert Name</label><input id="naN" placeholder="Visa Expiry Warning"/></div><div class="fg"><label>Trigger Condition</label><input id="naC" placeholder="days_to_end &lt; 30"/></div><div class="fg"><label>Recipient Emails</label><input id="naE" placeholder="a@co.com, b@co.com"/></div><div class="fg"><label>Frequency</label><select id="naF"><option>Daily</option><option>Weekly</option><option>Monthly</option></select></div></div><button class="btn btnp" onclick="addAlert()">Add Rule</button></div></div>
+  </div>
+  <!-- CONFIG -->
+  <div class="page" id="page-config">
+    <div class="story"><div class="stag">⚙️ Data Sources</div><div class="sh">Connect your Google Sheets</div><div class="sd">Paste each Sheet ID and tab name. Sheets must be published as CSV: <strong>File → Share → Publish to web → Select tab → CSV → Publish.</strong> See "How to Connect Sheets" for the full guide.</div></div>
+    <div class="card"><div class="ch"><div class="ct">Google Sheet Connections</div><button class="btn btng" style="font-size:11px" onclick="addSC()">+ Add Sheet</button></div><div class="cb"><div id="sheetL"></div></div></div>
+    <div class="card"><div class="ch"><div class="ct">Threshold Settings</div></div><div class="cb"><div class="g3"><div class="fg"><label>NB Amber (days)</label><input type="number" id="thA" value="30"/></div><div class="fg"><label>NB Red (days)</label><input type="number" id="thR" value="60"/></div><div class="fg"><label>Track Warning (months)</label><input type="number" id="thT" value="12"/></div><div class="fg"><label>Track Critical (months)</label><input type="number" id="thO" value="18"/></div><div class="fg"><label>Contract Expiry (days)</label><input type="number" id="thC" value="30"/></div><div class="fg"><label>Auto-refresh (min,0=off)</label><input type="number" id="thAR" value="0"/></div></div><button class="btn btnp" onclick="saveT()">Save Settings</button></div></div>
+  </div>
+  <!-- HOW-TO -->
+  <div class="page" id="page-howto">
+    <div class="story"><div class="stag">📖 Integration Guide</div><div class="sh">How to fetch data from Google Sheets</div><div class="sd">This dashboard reads live data directly from your Google Sheets using their public CSV export URL. No backend, no API keys needed.</div></div>
+    <div class="card" style="margin-bottom:16px"><div class="ch"><div class="ct">Step-by-Step Setup</div></div><div class="cb">
+      <div class="hstep"><div class="hnum">1</div><div><div class="hh">Publish your Google Sheet as CSV</div><div class="hp">Open your Google Sheet → <strong>File → Share → Publish to web</strong> → select your tab → choose <strong>CSV</strong> → click <strong>Publish</strong>. Do this for each tab/sheet separately.</div></div></div>
+      <div class="hstep"><div class="hnum">2</div><div><div class="hh">Get your Sheet ID from the URL</div><div class="hp">Your sheet URL: <code style="font-family:var(--mono);font-size:11px;color:var(--cyan)">https://docs.google.com/spreadsheets/d/<strong>YOUR_SHEET_ID</strong>/edit</code><br/>Copy the long string between <code style="font-family:var(--mono);font-size:11px">/d/</code> and <code style="font-family:var(--mono);font-size:11px">/edit</code>.</div></div></div>
+      <div class="hstep"><div class="hnum">3</div><div><div class="hh">How the dashboard fetches data automatically</div><div class="hp">When you enter a Sheet ID and click Refresh, this URL is constructed and fetched:</div><div class="cb2"><span class="cm2">// Auto-constructed URL — no code needed</span><br/><span class="ck">const</span> url = <span class="cs">`https://docs.google.com/spreadsheets/d/</span><span class="cv">${sheetId}</span><span class="cs">/gviz/tq?tqx=out:csv&amp;sheet=</span><span class="cv">${tabName}</span><span class="cs">`</span>;<br/><span class="ck">const</span> csv = <span class="ck">await</span> fetch(url).then(r => r.text());<br/><span class="cm2">// Dashboard auto-parses CSV → JS objects → charts + tables</span></div></div></div>
+      <div class="hstep"><div class="hnum">4</div><div><div class="hh">Enter your Sheet IDs in Data Sources</div><div class="hp">Go to <strong>Data Sources</strong> in the sidebar → paste the Sheet ID and tab name for each sheet → click <strong>Refresh All Data</strong>. The dashboard fetches and renders all data automatically.</div></div></div>
+      <div class="hstep"><div class="hnum">5</div><div><div class="hh">Required column headers (Resources sheet)</div><div class="hp">The dashboard expects these exact column names (or remap in Employee Sheet → Configure Columns):</div><div class="cb2"><span class="cv">Code, Name, Email, Contract, Engagement, Title, BillingResourceLevel,</span><br/><span class="cv">Competency, StartDate, EndDate, BillingType, AllocationPercentage,</span><br/><span class="cv">ShiftAllowance, TrackMonths</span><br/><span class="cm2">// TrackMonths = add as a formula: months since track start date</span></div></div></div>
+    </div></div>
+    <div class="g2">
+      <div class="card nm"><div class="ch"><div class="ct">Troubleshooting</div></div><div class="cb">
+        <div class="hstep" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2)"><div class="hnum" style="background:rgba(239,68,68,.2);box-shadow:none;color:var(--red)">!</div><div><div class="hh" style="color:var(--red)">Fetch blocked / CORS error?</div><div class="hp">Ensure the sheet is <strong>Published to web</strong> (not just shared). Org-restricted sheets won't work. Set sharing to "Anyone with link → Viewer" AND publish via File → Publish to web.</div></div></div>
+        <div class="hstep" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);margin-top:8px"><div class="hnum" style="background:rgba(245,158,11,.2);box-shadow:none;color:var(--amber)">?</div><div><div class="hh" style="color:var(--amber)">Wrong tab name?</div><div class="hp">Tab names are <strong>case-sensitive</strong>. Check the tab label at the bottom of your Google Sheet. <code style="font-family:var(--mono);font-size:11px">Resources</code> ≠ <code style="font-family:var(--mono);font-size:11px">resources</code>.</div></div></div>
+        <div class="hstep" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);margin-top:8px"><div class="hnum" style="background:rgba(16,185,129,.2);box-shadow:none;color:var(--green)">✓</div><div><div class="hh" style="color:var(--green)">Data not updating?</div><div class="hp">Google caches published CSVs for ~5 minutes. After editing your sheet, wait a few minutes then click <strong>Refresh All Data</strong> in the sidebar.</div></div></div>
+      </div></div>
+      <div class="card nm"><div class="ch"><div class="ct">Multiple Sheets Architecture</div></div><div class="cb" style="padding:0"><div class="tw"><table><thead><tr><th>Sheet / Tab</th><th>Role</th><th>Key Columns</th></tr></thead><tbody>
+        <tr><td><strong>Resources</strong></td><td><span class="p pb">Main</span></td><td style="font-size:11px;color:var(--t3)">Code, Name, BillingType, Competency, TrackMonths…</td></tr>
+        <tr><td><strong>OnboardingSteps</strong></td><td><span class="p pg">Lifecycle</span></td><td style="font-size:11px;color:var(--t3)">ResourceCode, StepName, Status, DueDate</td></tr>
+        <tr><td><strong>RotationPlan</strong></td><td><span class="p pa">Workforce</span></td><td style="font-size:11px;color:var(--t3)">ResourceCode, ProposedTrack, PlannedDate</td></tr>
+        <tr><td><strong>GenAITraining</strong></td><td><span class="p pp">Learning</span></td><td style="font-size:11px;color:var(--t3)">ResourceCode, ModuleName, Status, Score</td></tr>
+        <tr><td><strong>Alerts_Config</strong></td><td><span class="p pc">System</span></td><td style="font-size:11px;color:var(--t3)">AlertName, Condition, Recipients, Active</td></tr>
+      </tbody></table></div></div></div>
+    </div>
+  </div>
+  </div>
+</main>
+<!-- DRAWER -->
+<div class="drawer" id="empDrw">
+  <div class="dh"><div class="dav" id="drwAv">?</div><div><div class="dnm" id="drwNm">Employee</div><div class="drl" id="drwRl">—</div></div><button class="dcl" onclick="closeDrw()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="dbd" id="drwBody"></div>
+  <div class="dft"><button class="btn btnp" onclick="saveDrw()">Save Changes</button><button class="btn btng" onclick="closeDrw()">Cancel</button><button class="btn btnd" style="margin-left:auto" onclick="delEmp()">Remove</button></div>
+</div>
+<script>
+// ── YOUR SHEET IS PRE-CONNECTED ──
+// Sheet ID: 1XePTOFX0-D01t5xTLoGoCUunpU8xch2w4FQnqzKJy4s
+// Tab detected from your file: "data"
+// ACTION NEEDED: In your Google Sheet go to File → Share → Publish to web → Tab: data → CSV → Publish
+const YOUR_SHEET_ID='1XePTOFX0-D01t5xTLoGoCUunpU8xch2w4FQnqzKJy4s';
+const YOUR_TAB='data';
+// Column map: your sheet headers → dashboard fields
+const COL_MAP={
+  'Code':            'Code',
+  'Name':            'Name',
+  'Email':           'Email',
+  'Contract':        'Contract',
+  'Engagement':      'Engagement',
+  'Title':           'Title',
+  'BillingResourceLevel': 'BillingResourceLevel',
+  'Competency':      'Competency',
+  'StartDate':       'StartDate',
+  'EndDate':         'EndDate',
+  'BillingType':     'BillingType',
+  'AllocationPercentage': 'AllocationPercentage',
+  'ShiftAllowance':  'ShiftAllowance',
+};
+let CFG={sheets:[{label:'Resources (your sheet)',id:YOUR_SHEET_ID,tab:YOUR_TAB,role:'resources',status:'pending'},{label:'Onboarding',id:'',tab:'OnboardingSteps',role:'onboarding',status:'pending'},{label:'Rotation Plan',id:'',tab:'RotationPlan',role:'rotation',status:'pending'},{label:'GenAI Training',id:'',tab:'GenAITraining',role:'training',status:'pending'},{label:'Alerts Config',id:'',tab:'Alerts_Config',role:'alerts',status:'pending'}],thresh:{amber:30,red:60,track:12,overdue:18,contract:30,ar:0},alerts:[{id:1,name:'Non-Billable > 30 Days',cond:'days_nb>=30',freq:'Daily',emails:'delivery@co.com',on:true},{id:2,name:'Non-Billable > 60 Days',cond:'days_nb>=60',freq:'Daily',emails:'head@co.com',on:true},{id:3,name:'Track Change Due',cond:'months_track>=12',freq:'Weekly',emails:'manager@co.com',on:true},{id:4,name:'Onboarding Step Overdue',cond:'step_past_due',freq:'Daily',emails:'hr@co.com',on:true},{id:5,name:'GenAI Training Overdue',cond:'module_past_due',freq:'Weekly',emails:'ld@co.com',on:true},{id:6,name:'Contract Expiry <30 Days',cond:'days_to_end<=30',freq:'Weekly',emails:'hr@co.com,finance@co.com',on:true},{id:7,name:'Laptop Not Returned',cond:'deboard_laptop',freq:'Daily',emails:'it@co.com',on:false}]};
+const DEMO=[{Code:'1001',Name:'Ayush Mohan',Email:'ayush@co.com',Competency:'DevOps',Title:'DevOps Engineer',BillingType:'Billable',AllocationPercentage:100,StartDate:'2022-02-04',EndDate:'2027-12-31',Engagement:'T&M',Contract:'Permanent',TrackMonths:29},{Code:'1002',Name:'Priya Singh',Email:'priya@co.com',Competency:'Cloud',Title:'Cloud Architect',BillingType:'Non-Billable',AllocationPercentage:0,StartDate:'2023-08-01',EndDate:'2026-09-30',Engagement:'Fixed',Contract:'Contract',TrackMonths:10},{Code:'1003',Name:'Rahul Verma',Email:'rahul@co.com',Competency:'Security',Title:'Security Analyst',BillingType:'Billable',AllocationPercentage:80,StartDate:'2021-06-15',EndDate:'2026-06-30',Engagement:'T&M',Contract:'Permanent',TrackMonths:14},{Code:'1004',Name:'Sneha Gupta',Email:'sneha@co.com',Competency:'DevOps',Title:'SRE Lead',BillingType:'Non-Billable',AllocationPercentage:50,StartDate:'2024-01-10',EndDate:'2026-12-31',Engagement:'T&M',Contract:'Contract',TrackMonths:6},{Code:'1005',Name:'Amit Kumar',Email:'amit@co.com',Competency:'Cloud',Title:'Cloud Engineer',BillingType:'Billable',AllocationPercentage:100,StartDate:'2023-03-20',EndDate:'2027-03-31',Engagement:'Fixed',Contract:'Permanent',TrackMonths:8},{Code:'1006',Name:'Divya Nair',Email:'divya@co.com',Competency:'Data',Title:'Data Engineer',BillingType:'Billable',AllocationPercentage:90,StartDate:'2022-11-01',EndDate:'2026-10-31',Engagement:'T&M',Contract:'Permanent',TrackMonths:20},{Code:'1007',Name:'Kiran Patel',Email:'kiran@co.com',Competency:'Security',Title:'Pen Tester',BillingType:'Non-Billable',AllocationPercentage:0,StartDate:'2024-03-15',EndDate:'2026-12-31',Engagement:'Fixed',Contract:'Contract',TrackMonths:4},{Code:'1008',Name:'Neha Sharma',Email:'neha@co.com',Competency:'Data',Title:'Data Scientist',BillingType:'Billable',AllocationPercentage:100,StartDate:'2023-07-01',EndDate:'2026-06-30',Engagement:'T&M',Contract:'Permanent',TrackMonths:12},{Code:'1009',Name:'Rohan Das',Email:'rohan@co.com',Competency:'DevOps',Title:'CI/CD Engineer',BillingType:'Billable',AllocationPercentage:75,StartDate:'2021-09-01',EndDate:'2026-08-31',Engagement:'T&M',Contract:'Permanent',TrackMonths:24},{Code:'1010',Name:'Pooja Mehta',Email:'pooja@co.com',Competency:'Cloud',Title:'Azure Specialist',BillingType:'Non-Billable',AllocationPercentage:0,StartDate:'2024-05-01',EndDate:'2026-11-30',Engagement:'Fixed',Contract:'Contract',TrackMonths:7},{Code:'1011',Name:'Vikram Rao',Email:'vikram@co.com',Competency:'Data',Title:'ML Engineer',BillingType:'Billable',AllocationPercentage:100,StartDate:'2022-04-01',EndDate:'2027-03-31',Engagement:'T&M',Contract:'Permanent',TrackMonths:16},{Code:'1012',Name:'Ananya Roy',Email:'ananya@co.com',Competency:'Security',Title:'IAM Specialist',BillingType:'Billable',AllocationPercentage:85,StartDate:'2023-01-15',EndDate:'2026-01-14',Engagement:'Fixed',Contract:'Contract',TrackMonths:9}];
+let DATA={resources:[...DEMO]};let CH={};let BF='all';let eSort={k:'Name',d:'asc'};let drwE=null;
+let ECOLS=[{key:'Code',label:'Emp Code',type:'text',hdr:'Code',vis:true,w:80},{key:'Name',label:'Name',type:'text',hdr:'Name',vis:true,w:160},{key:'Email',label:'Email',type:'email',hdr:'Email',vis:true,w:180},{key:'Competency',label:'Competency',type:'badge',hdr:'Competency',vis:true,w:110,bm:{}},{key:'Title',label:'Title',type:'text',hdr:'Title',vis:true,w:160},{key:'BillingType',label:'Billing',type:'badge',hdr:'BillingType',vis:true,w:110,bm:{Billable:'pg','Non-Billable':'pr'}},{key:'AllocationPercentage',label:'Allocation',type:'progress',hdr:'AllocationPercentage',vis:true,w:120},{key:'Engagement',label:'Engagement',type:'badge',hdr:'Engagement',vis:true,w:90,bm:{'T&M':'pb',Fixed:'pp'}},{key:'Contract',label:'Contract',type:'text',hdr:'Contract',vis:false,w:100},{key:'StartDate',label:'Start Date',type:'date',hdr:'StartDate',vis:true,w:100},{key:'EndDate',label:'End Date',type:'date',hdr:'EndDate',vis:true,w:100},{key:'TrackMonths',label:'Track (mo.)',type:'number',hdr:'TrackMonths',vis:true,w:100}];
+const PAL=['#3b82f6','#6366f1','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#f43f5e','#fb923c','#a3e635'];
+const BO=(ex={})=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false,...(ex.leg||{})},tooltip:{backgroundColor:'#1a2235',titleColor:'#f1f5f9',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,.1)',borderWidth:1,padding:10,cornerRadius:8}},scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},...(ex.x||{})},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'},...(ex.y||{})}}});
+function mk(id,cfg){if(CH[id])CH[id].destroy();const el=document.getElementById(id);if(!el)return;CH[id]=new Chart(el,cfg);}
+function ds(d){return Math.floor((Date.now()-new Date(d))/86400000);}
+function buildCharts(){
+  const res=DATA.resources;const b=res.filter(r=>r.BillingType==='Billable').length;const nb=res.length-b;
+  const DO=(ex={})=>({...BO(ex),cutout:'65%',scales:{x:{display:false},y:{display:false}}});
+  mk('cB',{type:'doughnut',data:{labels:['Billable','Non-Billable'],datasets:[{data:[b,nb],backgroundColor:['#10b981','#ef4444'],borderWidth:0,hoverOffset:6}]},options:DO({leg:{display:true,labels:{color:'#f1f5f9',usePointStyle:true,pointStyleWidth:10,font:{size:11}}}})});
+  const cg={};res.forEach(r=>cg[r.Competency]=(cg[r.Competency]||0)+1);
+  mk('cC',{type:'doughnut',data:{labels:Object.keys(cg),datasets:[{data:Object.values(cg),backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},options:{...DO(),cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{color:'#f1f5f9',usePointStyle:true,pointStyleWidth:10,font:{size:11},boxWidth:10}},tooltip:BO().plugins.tooltip}}});
+  const bk=[0,0,0,0,0];res.forEach(r=>{const a=+r.AllocationPercentage||0;if(a===0)bk[0]++;else if(a<=25)bk[1]++;else if(a<=50)bk[2]++;else if(a<=75)bk[3]++;else bk[4]++;});
+  mk('cA',{type:'bar',data:{labels:['0%','1–25%','26–50%','51–75%','76–100%'],datasets:[{data:bk,backgroundColor:['#ef4444','#f43f5e','#f59e0b','#06b6d4','#10b981'],borderRadius:6,borderSkipped:false}]},options:BO({x:{grid:{display:false}},y:{ticks:{stepSize:1}}})});
+  mk('cCB',{type:'bar',data:{labels:Object.keys(cg),datasets:[{data:Object.values(cg),backgroundColor:PAL,borderRadius:8,borderSkipped:false}]},options:BO({x:{grid:{display:false}},y:{ticks:{stepSize:1}}})});
+  const comps=Object.keys(cg);
+  const bD=comps.map(c=>res.filter(r=>r.Competency===c&&r.BillingType==='Billable').length);
+  const nD=comps.map(c=>res.filter(r=>r.Competency===c&&r.BillingType==='Non-Billable').length);
+  mk('cCBill',{type:'bar',data:{labels:comps,datasets:[{label:'Billable',data:bD,backgroundColor:'#10b981',borderRadius:4,borderSkipped:false},{label:'Non-Billable',data:nD,backgroundColor:'#ef4444',borderRadius:4,borderSkipped:false}]},options:{...BO({x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{stepSize:1}}}),plugins:{legend:{display:true,labels:{color:'#f1f5f9',usePointStyle:true,font:{size:11}}},tooltip:BO().plugins.tooltip}}});
+  const aD=comps.map(c=>{const cr=res.filter(r=>r.Competency===c);return Math.round(cr.reduce((s,r)=>s+(+r.AllocationPercentage||0),0)/cr.length);});
+  mk('cCAlloc',{type:'bar',data:{labels:comps,datasets:[{data:aD,backgroundColor:PAL,borderRadius:6,borderSkipped:false}]},options:BO({x:{grid:{display:false}},y:{max:100,ticks:{callback:v=>v+'%'}}})});
+  const nbR=res.filter(r=>r.BillingType==='Non-Billable');const nbC={};nbR.forEach(r=>nbC[r.Competency]=(nbC[r.Competency]||0)+1);
+  mk('cNBC',{type:'bar',data:{labels:Object.keys(nbC),datasets:[{data:Object.values(nbC),backgroundColor:'#ef4444',borderRadius:6,borderSkipped:false}]},options:BO({x:{grid:{display:false}},y:{ticks:{stepSize:1}}})});
+  const db=[0,0,0];nbR.forEach(r=>{const d=ds(r.StartDate);if(d<30)db[0]++;else if(d<60)db[1]++;else db[2]++;});
+  mk('cNBD',{type:'doughnut',data:{labels:['<30d','30–60d','>60d'],datasets:[{data:db,backgroundColor:['#06b6d4','#f59e0b','#ef4444'],borderWidth:0,hoverOffset:6}]},options:{...DO({leg:{display:true,labels:{color:'#f1f5f9',usePointStyle:true,pointStyleWidth:10,font:{size:11}}}}),cutout:'60%'}});
+  mk('cOnb',{type:'doughnut',data:{labels:['Complete','In Progress','Not Started'],datasets:[{data:[30,50,20],backgroundColor:['#10b981','#3b82f6','#ef4444'],borderWidth:0,hoverOffset:6}]},options:{...DO({leg:{display:true,labels:{color:'#f1f5f9',usePointStyle:true,pointStyleWidth:10,font:{size:11}}}}),cutout:'62%'}});
+  const rb=[0,0,0,0];res.forEach(r=>{const m=r.TrackMonths||0;if(m<6)rb[0]++;else if(m<12)rb[1]++;else if(m<18)rb[2]++;else rb[3]++;});
+  mk('cRot',{type:'bar',data:{labels:['<6 months','6–12 months','12–18 months','>18 months'],datasets:[{data:rb,backgroundColor:['#10b981','#06b6d4','#f59e0b','#ef4444'],borderRadius:8,borderSkipped:false}]},options:BO({x:{grid:{display:false}},y:{ticks:{stepSize:1}}})});
+  mk('cTr',{type:'bar',data:{labels:['Fundamentals','Responsible AI','Prompt Eng.','AI in Work','Advanced'],datasets:[{label:'Completed',data:[7,5,4,3,2],backgroundColor:'#10b981',borderRadius:4},{label:'In Progress',data:[3,4,4,3,3],backgroundColor:'#f59e0b',borderRadius:4},{label:'Not Started',data:[2,3,4,6,7],backgroundColor:'#ef4444',borderRadius:4}]},options:{...BO({x:{stacked:true,grid:{display:false}},y:{stacked:true}}),plugins:{legend:{display:true,labels:{color:'#f1f5f9',usePointStyle:true,font:{size:11}}},tooltip:BO().plugins.tooltip}}});
+}
+function buildKPIs(){
+  const res=DATA.resources;const bl=res.filter(r=>r.BillingType==='Billable');const nb=res.filter(r=>r.BillingType==='Non-Billable');const rot=res.filter(r=>(r.TrackMonths||0)>=CFG.thresh.track);const avg=Math.round(res.reduce((s,r)=>s+(+r.AllocationPercentage||0),0)/res.length)||0;const rate=Math.round(bl.length/res.length*100)||0;
+  document.getElementById('k1').textContent=res.length;document.getElementById('k2').textContent=rate+'%';document.getElementById('k2s').textContent=bl.length+' of '+res.length;document.getElementById('k3').textContent=nb.length;document.getElementById('k4').textContent=rot.length;document.getElementById('k5').textContent=avg+'%';document.getElementById('nbB').textContent=nb.length;
+  const nbA=nb.filter(r=>ds(r.StartDate)>=30);const nbR=nb.filter(r=>ds(r.StartDate)>=60);
+  document.getElementById('bk1').textContent=nb.length;document.getElementById('bk2').textContent=nbA.length;document.getElementById('bk3').textContent=nbR.length;document.getElementById('bk4').textContent=nb.length?Math.round(nb.reduce((s,r)=>s+ds(r.StartDate),0)/nb.length):0;
+  document.getElementById('rk1').textContent=rot.length;document.getElementById('rk2').textContent=res.filter(r=>(r.TrackMonths||0)>=CFG.thresh.overdue).length;document.getElementById('rk3').textContent=res.filter(r=>(r.TrackMonths||0)<CFG.thresh.track).length;
+}
+function buildStory(){
+  const res=DATA.resources;const nb=res.filter(r=>r.BillingType==='Non-Billable');const bl=res.filter(r=>r.BillingType==='Billable');const rot=res.filter(r=>(r.TrackMonths||0)>=CFG.thresh.track);const rate=Math.round(bl.length/res.length*100)||0;const avg=Math.round(res.reduce((s,r)=>s+(+r.AllocationPercentage||0),0)/res.length)||0;const nb60=nb.filter(r=>ds(r.StartDate)>=60).length;const nb30=nb.filter(r=>ds(r.StartDate)>=30).length;const cg={};res.forEach(r=>cg[r.Competency]=(cg[r.Competency]||0)+1);const top=Object.entries(cg).sort((a,b)=>b[1]-a[1])[0];
+  let h,d;
+  if(rate<60){h='⚠️ Only '+rate+'% billable — urgent action needed';d=nb.length+' of '+res.length+' resources are non-billable. '+nb60+' have been NB for 60+ days. '+rot.length+' rotation'+(rot.length!==1?'s':'')+' overdue.';}
+  else if(rate<80){h=rate+'% billable rate — optimise non-billable resources';d=nb.length+' resources are non-billable. '+rot.length+' are due for track rotation. Average allocation: '+avg+'%.';}
+  else{h='Strong '+rate+'% billable rate — team is well-utilised';d='Only '+nb.length+' non-billable. Average allocation '+avg+'%. '+(rot.length>0?rot.length+' rotation(s) to action.':'All track timelines healthy.');}
+  document.getElementById('sH').textContent=h;document.getElementById('sD').textContent=d;
+  document.getElementById('sP').innerHTML=['<span class="sp spb">👥 '+res.length+' Total</span>','<span class="sp '+(rate>=80?'spg':rate>=60?'spa':'spr')+'">'+rate+'% Billable</span>','<span class="sp spr">⚡ '+nb.length+' Non-Billable</span>',rot.length?'<span class="sp spa">🔄 '+rot.length+' Rotation Due</span>':'',top?'<span class="sp spp">🏆 '+top[0]+' '+top[1]+' ppl</span>':''].filter(Boolean).join('');
+  document.getElementById('bSH').textContent=nb60>0?nb60+' resources critically non-billable (60d+)':nb.length+' resources currently non-billable';
+  document.getElementById('bSD').textContent=nb30+' exceeded the 30-day amber threshold. '+nb60+' are in the critical 60+ day zone.';
+  document.getElementById('bSP').innerHTML='<span class="sp spr">🔴 '+nb60+' Critical</span> <span class="sp spa">🟡 '+(nb30-nb60)+' Amber</span> <span class="sp spg">🟢 '+(nb.length-nb30)+' Recent</span>';
+  document.getElementById('rSH').textContent=rot.length?rot.length+' resource'+(rot.length>1?'s':'')+' require track rotation':'All track timelines are healthy';
+  document.getElementById('cSH').textContent=top?top[0]+' leads with '+top[1]+' resources':'Workforce capability at a glance';
+  document.getElementById('cSD').textContent=top?'Your team spans '+Object.keys(cg).length+' competencies. '+top[0]+' has the highest headcount. Ensure cross-training for delivery resilience.':'Connect your data for insights.';
+  document.getElementById('bIns').innerHTML='<div class="il">📊 Insight</div><div class="it">'+(rate>=80?'<strong>Healthy.</strong> '+rate+'% billable is above the 80% target.':'<strong>Action required.</strong> '+nb.length+' non-billable. '+nb30+' have been NB 30+ days — escalate to Delivery Lead.')+'</div>';
+  document.getElementById('cIns').innerHTML='<div class="il">🧠 Insight</div><div class="it">'+(top?'<strong>'+top[0]+'</strong> is the largest competency. Ensure cross-training to reduce single-competency dependency.':'Connect your data.')+'</div>';
+  document.getElementById('aIns').innerHTML='<div class="il">📈 Insight</div><div class="it">Average allocation is <strong>'+avg+'%</strong>. '+(avg>=80?'Resources are well-utilised.':avg>=60?'Moderate utilisation — check part-allocations.':'Low average — possible bench time or split roles.')+' <strong>'+res.filter(r=>r.AllocationPercentage===100).length+'</strong> fully allocated.</div>';
+}
+function rRes(){const q=(document.getElementById('srch')?.value||'').toLowerCase();const rows=DATA.resources.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));document.getElementById('resTb').innerHTML=rows.map(r=>{const dl=Math.floor((new Date(r.EndDate)-Date.now())/86400000);const bp=r.BillingType==='Billable'?'<span class="p pg">Billable</span>':'<span class="p pr">Non-Billable</span>';const ep=dl<30?'<span class="p pr">'+r.EndDate+'</span>':dl<90?'<span class="p pa">'+r.EndDate+'</span>':'<span style="font-family:var(--mono);font-size:11px;color:var(--t3)">'+r.EndDate+'</span>';const tr=r.TrackMonths>=CFG.thresh.overdue?'<span class="p pr">Critical</span>':r.TrackMonths>=CFG.thresh.track?'<span class="p pa">Due</span>':r.TrackMonths>=10?'<span class="p pc">Watch</span>':'<span class="p pg">OK</span>';const a=+r.AllocationPercentage||0;const ac=a===100?'#10b981':a>=50?'#3b82f6':'#f59e0b';return '<tr><td><div style="font-weight:600">'+r.Name+'</div><div style="font-size:11px;color:var(--t3)">'+r.Email+'</div></td><td style="font-family:var(--mono);font-size:11px;color:var(--t3)">'+r.Code+'</td><td><span class="p pb">'+r.Competency+'</span></td><td>'+bp+'</td><td><div style="min-width:80px">'+a+'%<div class="pbar"><div class="pf" style="width:'+a+'%;background:'+ac+'"></div></div></div></td><td>'+tr+'</td><td>'+ep+'</td></tr>';}).join('')||'<tr><td colspan="7" class="empty">No results.</td></tr>';}
+function setBF(f,el){BF=f;document.querySelectorAll('[onclick^="setBF"]').forEach(b=>b.classList.remove('btnp'));if(el)el.classList.add('btnp');rBill();}
+function rBill(){const nb=DATA.resources.filter(r=>r.BillingType==='Non-Billable');const rows=BF==='all'?nb:nb.filter(r=>ds(r.StartDate)>=BF);document.getElementById('billTb').innerHTML=rows.map(r=>{const d=ds(r.StartDate);const hl=d>=CFG.thresh.red?'rgba(239,68,68,.05)':d>=CFG.thresh.amber?'rgba(245,158,11,.05)':'';const pill=d>=CFG.thresh.red?'<span class="p pr">🔴 '+d+'d</span>':d>=CFG.thresh.amber?'<span class="p pa">⚠️ '+d+'d</span>':'<span class="p pc">'+d+'d</span>';const act=d>=60?'<button class="btn btnd" style="font-size:10px;padding:4px 10px">Escalate</button>':d>=30?'<button class="btn btng" style="font-size:10px;padding:4px 10px">Flag</button>':'<span style="color:var(--t3);font-size:11px">Monitor</span>';return '<tr style="background:'+hl+'"><td><strong>'+r.Name+'</strong><br><span style="font-size:11px;color:var(--t3)">'+r.Email+'</span></td><td><span class="p pb">'+r.Competency+'</span></td><td style="font-family:var(--mono);font-size:11px;color:var(--t3)">'+r.StartDate+'</td><td>'+pill+'</td><td>'+(d>=CFG.thresh.red?'<span class="p pr">Critical</span>':d>=CFG.thresh.amber?'<span class="p pa">Amber</span>':'<span class="p pc">Low</span>')+'</td><td>'+act+'</td></tr>';}).join('')||'<tr><td colspan="6" class="empty">No non-billable resources in this range.</td></tr>';}
+function rComp(){const res=DATA.resources;const cg={};res.forEach(r=>{if(!cg[r.Competency])cg[r.Competency]={t:0,b:0,alloc:0,rot:0};cg[r.Competency].t++;if(r.BillingType==='Billable')cg[r.Competency].b++;cg[r.Competency].alloc+=+r.AllocationPercentage||0;if((r.TrackMonths||0)>=CFG.thresh.track)cg[r.Competency].rot++;});document.getElementById('compTb').innerHTML=Object.entries(cg).map(([c,v],i)=>{const avg=Math.round(v.alloc/v.t);const br=Math.round(v.b/v.t*100);return '<tr><td><span style="display:inline-flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:2px;background:'+PAL[i%PAL.length]+';display:inline-block"></span><strong>'+c+'</strong></span></td><td style="font-family:var(--mono);font-weight:700">'+v.t+'</td><td><span class="p pg">'+v.b+'</span></td><td><span class="p pr">'+(v.t-v.b)+'</span></td><td>'+avg+'%<div class="pbar"><div class="pf" style="width:'+avg+'%;background:'+PAL[i%PAL.length]+'"></div></div></td><td>'+(v.rot?'<span class="p pr">'+v.rot+' due</span>':'<span class="p pg">Clear</span>')+'</td><td>'+br+'%<div class="pbar"><div class="pf" style="width:'+br+'%;background:var(--green)"></div></div></td></tr>';}).join('');}
+function rOnb(){const steps=['Docs','Sys Access','Intro','Security','Tools','Mentor','1-Wk','30-Day','Sign-Off'];document.getElementById('flowRow').innerHTML=steps.map((s,i)=>{const st=i<3?'fd':i===3?'fp':'fn';return '<div class="fst '+st+'"><div class="fdot">'+(i<3?'✓':(i+1))+'</div><div class="flb">'+s+'</div></div>';}).join('');document.getElementById('onbTb').innerHTML=DATA.resources.map(r=>{const done=Math.min(9,Math.max(0,Math.floor(Math.random()*10)));const pct=Math.round(done/9*100);const st=done===9?'Complete':done>0?'In Progress':'Not Started';const pc=done===9?'pg':done>0?'pb':'pr';return '<tr><td><strong>'+r.Name+'</strong></td><td><span class="p pb">'+r.Competency+'</span></td><td style="font-family:var(--mono);font-size:11px;color:var(--t3)">'+r.StartDate+'</td><td style="min-width:120px"><div style="font-size:10px;color:var(--t3)">'+pct+'%</div><div class="pbar" style="height:5px"><div class="pf" style="width:'+pct+'%;background:'+(done===9?'#10b981':done>0?'#3b82f6':'#ef4444')+'"></div></div></td><td style="font-family:var(--mono)">'+done+'/9</td><td><span class="p '+pc+'">'+st+'</span></td><td style="font-family:var(--mono);font-size:11px">'+ds(r.StartDate)+'d</td></tr>';}).join('');}
+function rRot(){const fl=DATA.resources.filter(r=>(r.TrackMonths||0)>=CFG.thresh.track).sort((a,b)=>b.TrackMonths-a.TrackMonths);document.getElementById('rotTb').innerHTML=fl.map(r=>{const ov=r.TrackMonths>=CFG.thresh.overdue;return '<tr><td><strong>'+r.Name+'</strong><br><span style="font-size:11px;color:var(--t3)">'+r.Email+'</span></td><td><span class="p pb">'+r.Competency+'</span></td><td style="font-family:var(--mono);font-size:11px;color:var(--t3)">'+r.StartDate+'</td><td style="font-family:var(--mono);font-weight:700;color:'+(ov?'#ef4444':'#f59e0b')+'">'+r.TrackMonths+'</td><td>'+(ov?'<span class="p pr">🔴 Critical</span>':'<span class="p pa">⚠️ Due</span>')+'</td><td><button class="btn '+(ov?'btnd':'btng')+'" style="font-size:10px;padding:4px 10px">Plan Rotation</button></td></tr>';}).join('')||'<tr><td colspan="6" class="empty">No rotation actions required.</td></tr>';}
+function rTrain(){const sts=['Complete','In Progress','Not Started'];document.getElementById('trainTb').innerHTML=DATA.resources.map(r=>{const cols=[0,1,2,3,4].map(()=>{const s=sts[Math.floor(Math.random()*3)];const pc=s==='Complete'?'pg':s==='In Progress'?'pa':'pr';return '<td><span class="p '+pc+'" style="font-size:9px">'+(s==='Complete'?'✓':s==='In Progress'?'…':'—')+'</span></td>';}).join('');const ov=Math.floor(Math.random()*101);const op=ov>=80?'pg':ov>=40?'pa':'pr';return '<tr><td><strong>'+r.Name+'</strong></td><td><span class="p pb">'+r.Competency+'</span></td>'+cols+'<td><span class="p '+op+'">'+ov+'%</span></td></tr>';}).join('');}
+function fillEmpFilter(){const comps=[...new Set(DATA.resources.map(r=>r.Competency))].sort();document.getElementById('eFC').innerHTML='<option value="">All Competencies</option>'+comps.map(c=>'<option>'+c+'</option>').join('');}
+function cellRender(row,col){const v=row[col.key];if(v===undefined||v===''||v===null)return '<span style="color:var(--t3)">—</span>';switch(col.type){case 'badge':{const bm=col.bm||{};const cls=bm[v]||'pgr';return '<span class="p '+cls+'">'+v+'</span>';}case 'progress':{const pct=Math.min(100,Math.max(0,+v||0));const c=pct===100?'#10b981':pct>=50?'#3b82f6':'#f59e0b';return '<div style="min-width:80px">'+pct+'%<div class="pbar"><div class="pf" style="width:'+pct+'%;background:'+c+'"></div></div></div>';}case 'date':{const dl=Math.floor((new Date(v)-Date.now())/86400000);const c=dl<0?'var(--red)':dl<30?'var(--amber)':'var(--t3)';return '<span style="font-family:var(--mono);font-size:11px;color:'+c+'">'+v+'</span>';}case 'email':return '<a href="mailto:'+v+'" style="color:var(--blue);font-size:11px" onclick="event.stopPropagation()">'+v+'</a>';case 'number':{const n=+v;const c=n>=CFG.thresh.overdue?'var(--red)':n>=CFG.thresh.track?'var(--amber)':'var(--t3)';return '<span style="font-family:var(--mono);color:'+c+';font-weight:600">'+v+'</span>';}default:return '<span style="font-size:12px">'+v+'</span>';}}
+function rEmp(){const q=(document.getElementById('eS')?.value||'').toLowerCase();const fC=document.getElementById('eFC')?.value||'';const fB=document.getElementById('eFB')?.value||'';const fE=document.getElementById('eFE')?.value||'';let rows=DATA.resources.filter(r=>{if(q&&!JSON.stringify(r).toLowerCase().includes(q))return false;if(fC&&r.Competency!==fC)return false;if(fB&&r.BillingType!==fB)return false;if(fE&&r.Engagement!==fE)return false;return true;});rows.sort((a,b)=>{const cmp=String(a[eSort.k]||'').localeCompare(String(b[eSort.k]||''),undefined,{numeric:true});return eSort.d==='asc'?cmp:-cmp;});document.getElementById('ek1').textContent=rows.length;document.getElementById('ek1t').textContent=DATA.resources.length;document.getElementById('ek2').textContent=rows.filter(r=>r.BillingType==='Billable').length;document.getElementById('ek3').textContent=rows.filter(r=>r.BillingType==='Non-Billable').length;const avg=rows.length?Math.round(rows.reduce((s,r)=>s+(+r.AllocationPercentage||0),0)/rows.length):0;document.getElementById('ek4').textContent=avg+'%';const vc=ECOLS.filter(c=>c.vis);document.getElementById('eTh').innerHTML='<tr>'+vc.map(c=>'<th onclick="sortEmp(\''+c.key+'\')" style="cursor:pointer">'+c.label+(eSort.k===c.key?(eSort.d==='asc'?' ↑':' ↓'):'')+'</th>').join('')+'<th></th></tr>';document.getElementById('eTb').innerHTML=rows.map(r=>'<tr onclick="openDrw(\''+r.Code+'\')" style="cursor:pointer">'+vc.map(c=>'<td>'+cellRender(r,c)+'</td>').join('')+'<td><button class="btn btng" style="font-size:10px;padding:3px 8px;opacity:0" onclick="event.stopPropagation();openDrw(\''+r.Code+'\')" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">Edit</button></td></tr>').join('')||'<tr><td colspan="'+(vc.length+1)+'" class="empty">No employees match filters.</td></tr>';document.getElementById('empSrc').textContent=CFG.sheets.find(s=>s.role==='resources'&&s.status==='ok')?'Source: Google Sheet ✓':'Source: Demo Data';rColPv();}
+function sortEmp(k){if(eSort.k===k)eSort.d=eSort.d==='asc'?'desc':'asc';else{eSort.k=k;eSort.d='asc';}rEmp();}
+function exportCSV(){const vc=ECOLS.filter(c=>c.vis);const h=vc.map(c=>c.label).join(',');const rows=DATA.resources.map(r=>vc.map(c=>'"'+(r[c.key]||'')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h+'\n'+rows],{type:'text/csv'}));a.download='employees_'+new Date().toISOString().slice(0,10)+'.csv';a.click();}
+function ini(n){return(n||'?').split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();}
+function openDrw(code){const emp=DATA.resources.find(r=>r.Code===code);if(!emp)return;drwE={...emp};document.getElementById('drwAv').textContent=ini(emp.Name);document.getElementById('drwNm').textContent=emp.Name;document.getElementById('drwRl').textContent=emp.Title+' · '+emp.Competency;const secs=[{title:'Identity',keys:['Code','Name','Email','Title']},{title:'Assignment',keys:['Competency','Engagement','Contract','BillingType','AllocationPercentage']},{title:'Timeline',keys:['StartDate','EndDate','TrackMonths']}];const extra=ECOLS.filter(c=>!secs.flatMap(s=>s.keys).includes(c.key)).map(c=>c.key);if(extra.length)secs.push({title:'Additional',keys:extra});document.getElementById('drwBody').innerHTML=secs.map(sec=>'<div class="dsec"><div class="dst">'+sec.title+'</div><div class="dgr">'+sec.keys.map(k=>{const col=ECOLS.find(c=>c.key===k)||{key:k,label:k,type:'text'};const val=emp[k]||'';let inp;if(col.type==='badge'&&col.bm&&Object.keys(col.bm).length){const opts=Object.keys(col.bm).map(o=>'<option'+(o===val?' selected':'')+'>'+o+'</option>').join('');inp='<select id="df_'+k+'" style="width:100%;background:var(--s3);border:1px solid var(--brd);border-radius:4px;padding:4px 8px;color:var(--text)">'+opts+'</select>';}else if(col.type==='date')inp='<input type="date" id="df_'+k+'" value="'+val+'"/>';else if(col.type==='progress'||col.type==='number')inp='<input type="number" id="df_'+k+'" value="'+val+'"/>';else inp='<input type="text" id="df_'+k+'" value="'+val+'"/>';return '<div class="df"><label>'+col.label+'</label>'+inp+'</div>';}).join('')+'</div></div>').join('');document.getElementById('empDrw').classList.add('open');document.getElementById('drwOv').classList.add('open');}
+function saveDrw(){if(!drwE)return;const idx=DATA.resources.findIndex(r=>r.Code===drwE.Code);if(idx<0)return;ECOLS.forEach(c=>{const el=document.getElementById('df_'+c.key);if(el)DATA.resources[idx][c.key]=el.value;});closeDrw();renderAll();}
+function delEmp(){if(!drwE)return;if(!confirm('Remove '+drwE.Name+'?'))return;DATA.resources=DATA.resources.filter(r=>r.Code!==drwE.Code);closeDrw();renderAll();}
+function openAddEmp(){const blank={};ECOLS.forEach(c=>blank[c.key]='');blank.Code='NEW-'+(DATA.resources.length+1);drwE=blank;document.getElementById('drwAv').textContent='?';document.getElementById('drwNm').textContent='New Employee';document.getElementById('drwRl').textContent='Fill in details below';const secs=[{title:'Identity',keys:['Code','Name','Email','Title']},{title:'Assignment',keys:['Competency','Engagement','Contract','BillingType','AllocationPercentage']},{title:'Timeline',keys:['StartDate','EndDate','TrackMonths']}];document.getElementById('drwBody').innerHTML=secs.map(sec=>'<div class="dsec"><div class="dst">'+sec.title+'</div><div class="dgr">'+sec.keys.map(k=>{const col=ECOLS.find(c=>c.key===k)||{key:k,label:k,type:'text'};return '<div class="df"><label>'+col.label+'</label><input type="text" id="df_'+k+'" placeholder="'+k+'"/></div>';}).join('')+'</div></div>').join('');document.getElementById('empDrw').classList.add('open');document.getElementById('drwOv').classList.add('open');}
+function closeDrw(){document.getElementById('empDrw').classList.remove('open');document.getElementById('drwOv').classList.remove('open');drwE=null;}
+function rColMap(){document.getElementById('colMapL').innerHTML=ECOLS.map((c,i)=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:11px;font-weight:600;width:110px;color:var(--t3)">'+c.label+'</span><input type="text" value="'+c.hdr+'" style="flex:1;font-family:var(--mono);font-size:11px" oninput="ECOLS['+i+'].hdr=this.value"/><span class="p pgr" style="font-size:9px">'+c.type+'</span></div>').join('');}
+function rColVis(){document.getElementById('colVisL').innerHTML=ECOLS.map((c,i)=>'<div class="ctog" onclick="ECOLS['+i+'].vis=!ECOLS['+i+'].vis;rColVis();rColPv()"><div style="width:8px;height:8px;border-radius:50%;background:'+(c.vis?'var(--green)':'var(--t3)')+';flex-shrink:0"></div><span style="flex:1;font-size:12px;font-weight:500">'+c.label+'</span><span style="font-size:10px;color:var(--t3)">'+c.type+'</span></div>').join('');}
+function resetCols(){ECOLS.forEach(c=>c.vis=true);rColVis();rColPv();}
+function saveColMap(){rEmp();alert('Column mapping saved.');}
+function addCC(){const l=document.getElementById('ccL').value.trim();const h=document.getElementById('ccH').value.trim();const t=document.getElementById('ccT').value;const b=document.getElementById('ccB').value.trim();const w=+document.getElementById('ccW').value||120;const v=document.getElementById('ccV').value==='Yes';if(!l||!h)return;const bm={};if(b)b.split(',').forEach(pair=>{const[val,col]=pair.split(':');if(val&&col)bm[val.trim()]=col.trim();});ECOLS.push({key:h,label:l,type:t,hdr:h,vis:v,w,bm});DATA.resources.forEach(r=>{if(r[h]===undefined)r[h]='';});rColMap();rColVis();rColPv();['ccL','ccH','ccB'].forEach(id=>document.getElementById(id).value='');}
+function rColPv(){const vc=ECOLS.filter(c=>c.vis);document.getElementById('pvH').innerHTML='<tr>'+vc.map(c=>'<th>'+c.label+'</th>').join('')+'</tr>';document.getElementById('pvB').innerHTML=DATA.resources.slice(0,3).map(r=>'<tr>'+vc.map(c=>'<td>'+cellRender(r,c)+'</td>').join('')+'</tr>').join('');}
+function rAlerts(){document.getElementById('alertL').innerHTML=CFG.alerts.map(a=>'<div class="al"><div class="adot" style="background:'+(a.on?'var(--green)':'var(--t3)')+'"></div><div class="ai"><div class="an">'+a.name+'</div><div class="ad">Condition: <code style="font-family:var(--mono);font-size:10px;color:var(--cyan)">'+a.cond+'</code> · '+a.freq+' · <span style="color:var(--blue)">'+a.emails+'</span></div></div><div class="tgl '+(a.on?'on':'')+'" onclick="CFG.alerts.find(r=>r.id==='+a.id+').on=!CFG.alerts.find(r=>r.id==='+a.id+').on;rAlerts()"></div></div>').join('');}
+function addAlert(){const n=document.getElementById('naN').value.trim();const c=document.getElementById('naC').value.trim();const e=document.getElementById('naE').value.trim();const f=document.getElementById('naF').value;if(!n)return;CFG.alerts.push({id:Date.now(),name:n,cond:c,emails:e,freq:f,on:true});rAlerts();['naN','naC','naE'].forEach(id=>document.getElementById(id).value='');}
+function rSheets(){document.getElementById('sheetL').innerHTML=CFG.sheets.map((s,i)=>'<div class="srow"><div class="srt"><span class="srl">'+s.label+'</span><div class="sdot '+(s.status==='ok'?'ok':s.status==='error'?'err':'pend')+'" title="'+s.status+'"></div><span style="font-size:10px;color:var(--t3)">'+(s.status==='ok'?'Connected':s.status==='error'?'Error':'Not set')+'</span></div><div class="sinp"><input type="text" placeholder="Sheet ID (from URL)" value="'+s.id+'" oninput="CFG.sheets['+i+'].id=this.value" style="font-family:var(--mono);font-size:11px"/><input type="text" placeholder="Tab name" value="'+s.tab+'" oninput="CFG.sheets['+i+'].tab=this.value" style="font-family:var(--mono);font-size:11px"/></div></div>').join('');}
+function addSC(){CFG.sheets.push({label:'New Sheet',id:'',tab:'Sheet1',role:'custom',status:'pending'});rSheets();}
+function saveT(){CFG.thresh.amber=+document.getElementById('thA').value;CFG.thresh.red=+document.getElementById('thR').value;CFG.thresh.track=+document.getElementById('thT').value;CFG.thresh.overdue=+document.getElementById('thO').value;CFG.thresh.contract=+document.getElementById('thC').value;const ar=+document.getElementById('thAR').value;renderAll();if(ar>0)setInterval(syncAll,ar*60000);alert('Settings saved.');}
+function parseCSV(text){const lines=text.trim().split('\n');const headers=lines[0].split(',').map(h=>h.replace(/"/g,'').trim());return lines.slice(1).map(line=>{const vals=[];let cur='';let inQ=false;for(const ch of line){if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}else cur+=ch;}vals.push(cur.trim());const obj={};headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,'').trim());return obj;});}
+function mapRow(r){
+  // Apply COL_MAP: rename sheet headers to dashboard field names
+  const out={};
+  Object.entries(r).forEach(([k,v])=>{
+    const mapped=Object.keys(COL_MAP).find(ck=>ck.trim()===k.trim());
+    if(mapped) out[COL_MAP[mapped]]=v;
+    else out[k]=v; // keep unmapped cols as-is
+  });
+  // Derive TrackMonths from StartDate if not present
+  if(!out.TrackMonths && out.StartDate){
+    const months=Math.floor((Date.now()-new Date(out.StartDate))/(1000*60*60*24*30.4));
+    out.TrackMonths=Math.max(0,months);
+  }
+  // Normalise AllocationPercentage to number
+  if(out.AllocationPercentage) out.AllocationPercentage=+out.AllocationPercentage||0;
+  return out;
+}
+async function syncAll(){const btn=document.getElementById('syncBtn');btn.classList.add('loading');btn.disabled=true;const conf=CFG.sheets.filter(s=>s.id&&s.id.length>10);if(!conf.length){btn.classList.remove('loading');btn.disabled=false;alert('No sheets configured.\n\nGo to Data Sources → enter your Google Sheet IDs.\nSee "How to Connect Sheets" for the full guide.');return;}for(const s of conf){try{const url='https://docs.google.com/spreadsheets/d/'+s.id+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(s.tab);const resp=await fetch(url);if(!resp.ok)throw new Error('HTTP '+resp.status);const rows=parseCSV(await resp.text());if(s.role==='resources'&&rows.length){DATA.resources=rows.map(r=>mapRow(r)).filter(r=>r.Name);}s.status='ok';}catch(e){s.status='error';console.warn(s.label,e.message);}}renderAll();const t=new Date().toLocaleTimeString();document.getElementById('sTime').textContent='Last sync: '+t;document.getElementById('tSync').textContent=t;btn.classList.remove('loading');btn.disabled=false;rSheets();}
+// ── AUTO FETCH YOUR SHEET ON LOAD ──
+window.addEventListener('load',()=>{
+  // Show a non-blocking banner if sheet not yet published
+  const banner=document.createElement('div');
+  banner.id='connectBanner';
+  banner.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a2235;border:1px solid rgba(59,130,246,.4);border-radius:10px;padding:14px 18px;max-width:340px;z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:12px;line-height:1.6;color:#94a3b8';
+  banner.innerHTML='<div style="font-weight:700;color:#f1f5f9;margin-bottom:6px">🔗 Your sheet is pre-configured</div><div>Sheet ID: <code style="font-family:var(--mono);color:#7dd3fc;font-size:10px">1XePTOFX0…Jy4s</code> · Tab: <code style="font-family:var(--mono);color:#7dd3fc;font-size:10px">data</code><br/><br/>To load live data:<br/>1. Open your sheet → <strong style="color:#f1f5f9">File → Share → Publish to web</strong><br/>2. Select tab <strong style="color:#f1f5f9">data</strong> → Format: <strong style="color:#f1f5f9">CSV</strong> → Publish<br/>3. Click <strong style="color:#3b82f6">Refresh All Data ↓</strong></div><div style="display:flex;gap:8px;margin-top:10px"><button onclick="syncAll();document.getElementById(\'connectBanner\').remove()" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer">Try Refresh Now</button><button onclick="document.getElementById(\'connectBanner\').remove()" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:#94a3b8;border-radius:6px;padding:6px 14px;font-size:11px;cursor:pointer">Dismiss</button></div>';
+  document.body.appendChild(banner);
+  // Attempt silent auto-fetch
+  syncAll().catch(()=>{});
+});
+const PM={overview:{t:'Overview',s:'Resource Intelligence Dashboard'},billing:{t:'Billing & Non-Billable',s:'Utilisation and revenue risk analysis'},competency:{t:'Competency Analytics',s:'Workforce capability breakdown'},employees:{t:'Employee Sheet',s:'Full employee master view'},empconfig:{t:'Column Configuration',s:'Customise employee sheet columns'},onboarding:{t:'Onboarding Pipeline',s:'New hire journey tracking'},rotation:{t:'Track & Rotation',s:'Workforce freshness and rotation plans'},training:{t:'GenAI Training',s:'AI certification program status'},alerts:{t:'Alert Engine',s:'Proactive notification configuration'},config:{t:'Data Sources',s:'Google Sheets connection settings'},howto:{t:'How to Connect Sheets',s:'Integration guide and troubleshooting'}};
+function go(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('active');if(el)el.classList.add('active');else document.querySelectorAll('.ni').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+id+"'"))n.classList.add('active');});const m=PM[id]||{t:id,s:''};document.getElementById('pgT').textContent=m.t;document.getElementById('pgS').textContent=m.s;closeSB();}
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('mobOv').classList.add('show');}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mobOv').classList.remove('show');}
+function renderAll(){buildKPIs();buildCharts();buildStory();rRes();rBill();rComp();rOnb();rRot();rTrain();fillEmpFilter();rEmp();rColMap();rColVis();rAlerts();rSheets();}
+renderAll();
+</script>
+</body>
+</html>
